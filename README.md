@@ -25,7 +25,7 @@
   <img src="https://img.shields.io/github/license/sajjad-developer/expenses-tracker-cli?label=license" alt="license" title="License information" />
 </a>
 <a href="https://github.com/sajjad-developer/expenses-tracker-cli/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22" target="_blank" rel="noopener noreferrer">
-  <img src="https://img.shields.io/github/issues/sajjad-developer/expenses-tracker-cli/good%20first%20issue?label=good%20first%20issue" alt="good first issue" title="Good first issues" />
+  <img src="https://img.shields.io/github/issues/sajjad-developer/expenses-tracker-cli/good%20first%20issue?label=good%20first%20issue" alt="good first issues" title="Good first issues" />
 </a>
 <a href="https://github.com/sajjad-developer/expenses-tracker-cli/issues?q=is%3Aissue+is%3Aopen+label%3Ahelp-wanted" target="_blank" rel="noopener noreferrer">
   <img src="https://img.shields.io/github/issues/sajjad-developer/expenses-tracker-cli/help-wanted?label=help%20wanted" alt="help wanted" title="Help wanted issues" />
