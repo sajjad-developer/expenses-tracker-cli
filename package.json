@@ -1,0 +1,59 @@
+{
+  "name": "expenses-tracker-cli",
+  "version": "1.0.0",
+  "main": "expense.js",
+  "type": "module",
+  "scripts": {
+    "start": "node expense.js"
+  },
+  "bin": {
+    "expense": "./expense.js"
+  },
+  "keywords": [
+    "expense",
+    "cli",
+    "finance",
+    "tracker",
+    "budget",
+    "csv",
+    "pdf",
+    "personal finance",
+    "expense tracker"
+  ],
+  "author": {
+    "name": "Md Sajjad Hossen",
+    "url": "https://eco-starfish-coder.com"
+  },
+  "license": "MIT",
+  "description": "A simple CLI tool to track daily personal expenses with CSV and PDF export and advanced filtering options.",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "csv-stringify": "^6.5.0",
+    "execa": "^9.3.0",
+    "ora": "^8.0.1",
+    "pdf-lib": "^1.17.1",
+    "prompts": "^2.4.2"
+  },
+  "files": [
+    "expense.js",
+    "package.json",
+    "all-currencies.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sajjad-developer/expenses-tracker-cli.git"
+  },
+  "homepage": "https://github.com/sajjad-developer/expenses-tracker-cli#readme",
+  "funding": {
+    "url": "https://eco-starfish-coder.com/tip"
+  },
+  "bugs": {
+    "url": "https://github.com/sajjad-developer/expenses-tracker-cli/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
