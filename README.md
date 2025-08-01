@@ -51,6 +51,7 @@
   - [🚀 Run Directly Using npx](#option-2-run-directly-using-npx)
 - [📋 Usage](#-usage)
 - [📝 Commands](#-commands)
+- [🤔 Frequently Asked Questions (FAQ)](#-frequently-asked-questions-faq)
 - [✅ Quality Assurance](#-quality-assurance)
 - [🤝 Contributing](#-contributing)
 - [☕ Support My Work](#-support-my-work)
@@ -168,6 +169,17 @@ For help on a command: expense <command> --help
 - `expense manual` – Generate user manual PDF
 
 ---
+
+## 🤔 Frequently Asked Questions (FAQ)
+
+**Q: Where is my expense data stored?**  
+**A:** Your data is securely and permanently stored in a `.expense` directory inside your user’s home folder (`~/.expense/`). It is **not** stored in your current working directory, and your data will remain intact even if you restart your computer or update the tool.
+
+**Q: Can I run this from any folder?**  
+**A:** Yes. Whether you've installed the tool globally with `npm install -g` or run it using `npx`, the `expense` command will work from any directory in your terminal. It always accesses the same central data store.
+
+**Q: Will I lose my data if I reinstall or update the tool?**  
+**A:** No. Your data is stored independently of the tool's code. This means you can safely update, reinstall, or switch between `npm` and `npx` without risking any data loss.
 
 ---
 
