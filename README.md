@@ -52,7 +52,7 @@
 - [📋 Usage](#-usage)
 - [📝 Commands](#-commands)
 - [🤔 Frequently Asked Questions (FAQ)](#-frequently-asked-questions-faq)
-- [✅ Quality Assurance](#-quality-assurance)
+- [✅ Our Approach to Quality](#-our-approach-to-quality)
 - [🤝 Contributing](#-contributing)
 - [☕ Support My Work](#-support-my-work)
 - [📄 License](#-license)
@@ -138,24 +138,28 @@ To view usage instructions:
 expense
 ```
 
-Example output:
-
 ```
 Welcome to expenses-tracker-cli! Your personal expense tracker.
 --------------------------------------------------
-To get started, try one of these commands:
-  expense add <amount> <description>       Add a new expense
-  expense list                             View all your expenses
-  expense total                            See your total spending
 
-For help on a command: expense <command> --help
+To get started, try one of these commands:
+expense add <amount> <description> - Add a new expense
+expense list - View all your expenses
+expense total - See your total spending
+expense change-currency --currency <3-letter currency code e.g., USD, EUR> - Set
+your preferred currency
+
+You can also filter expenses based on week, month, year, or specific date when typing list,total or export subcommand.
+
+For a full list of commands and options, type: expense --help
+For a comprehensive PDF manual, type: expense manual [--open]
+To undo your last action, type: expense undo
+To redo your last undone action, type: expense redo
 ```
 
 ---
 
 ## 📝 Commands
-
-- `expense reset` – Clears all stored expenses (with confirmation prompt)
 
 - `expense add <amount> <description>` – Add a new expense
 - `expense list` – Show expenses with filtering options
@@ -167,6 +171,8 @@ For help on a command: expense <command> --help
 - `expense export --csv / --pdf` – Export data
 - `expense undo` / `redo` – Undo/redo last action
 - `expense manual` – Generate user manual PDF
+
+- `expense reset` – Clears all stored expenses (with confirmation prompt)
 
 ---
 
