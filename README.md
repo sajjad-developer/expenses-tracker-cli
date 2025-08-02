@@ -50,6 +50,7 @@
   - [🌍 Global Installation](#option-1-global-installation)
   - [🚀 Run Directly Using npx](#option-2-run-directly-using-npx)
 - [📋 Usage](#-usage)
+- [💡 Usage Notes](#-usage-notes)
 - [📝 Commands](#-commands)
 - [🤔 Frequently Asked Questions (FAQ)](#-frequently-asked-questions-faq)
 - [✅ Our Approach to Quality](#-our-approach-to-quality)
@@ -159,6 +160,40 @@ To redo your last undone action, type: expense redo
 
 ---
 
+## 💡 Usage Notes
+
+A few tips to ensure you get the most out of the tool:
+
+- **Use Double Dashes (`--`) for Options:**
+  Always use a double dash (`--`) for full option names (e.g., `--currency`, `--month`). A single dash (`-`) is only for single-letter aliases (e.g., `-c` for `--currency`).
+
+  ```bash
+  # ✅ Correct:
+  expense list --month 8
+  expense add 50 "Tea" -c BDT
+
+  # ❌ Incorrect: The parser will misinterpret this
+  expense list -month 8
+  ```
+
+- **Quote Your Descriptions:**
+  When adding an expense with a description that contains spaces, you **must** enclose it in double quotes (`"`).
+
+  ```bash
+  # ✅ Correct:
+  expense add 150 "Weekly grocery shopping"
+
+  # ❌ Incorrect: This will only save "Weekly" as the description
+  expense add 150 Weekly grocery shopping
+  ```
+
+- **Date and Currency Formats:**
+  For the best results, always use standard formats:
+  - **Dates:** When using the `--date` filter, use the `YYYY-MM-DD` format (e.g., `2025-08-15`).
+  - **Currencies:** Use standard 3-letter [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) codes (e.g., `USD`, `EUR`, `BDT`). The tool will help you find the correct one if you're unsure.
+
+---
+
 ## 📝 Commands
 
 - `expense add <amount> <description>` – Add a new expense
@@ -178,14 +213,48 @@ To redo your last undone action, type: expense redo
 
 ## 🤔 Frequently Asked Questions (FAQ)
 
-**Q: Where is my expense data stored?**  
+**Q: Where is my expense data stored?**
+
 **A:** Your data is securely and permanently stored in a `.expense` directory inside your user’s home folder (`~/.expense/`). It is **not** stored in your current working directory, and your data will remain intact even if you restart your computer or update the tool.
 
-**Q: Can I run this from any folder?**  
+**Q: Can I run this from any folder?**
+
 **A:** Yes. Whether you've installed the tool globally with `npm install -g` or run it using `npx`, the `expense` command will work from any directory in your terminal. It always accesses the same central data store.
 
-**Q: Will I lose my data if I reinstall or update the tool?**  
+**Q: Will I lose my data if I reinstall or update the tool?**
+
 **A:** No. Your data is stored independently of the tool's code. This means you can safely update, reinstall, or switch between `npm` and `npx` without risking any data loss.
+
+**Q: How does currency handling work? Can I use multiple currencies?**
+
+**A:** Yes. The tool gives you two levels of control over your currencies for maximum flexibility:
+
+> **1. Setting the Default Currency**
+>
+> You can set your preferred currency at any time. This will be used by default for all future expenses.
+>
+> ```bash
+> # Set your default currency to Euros
+> expense change-currency --currency EUR
+> ```
+>
+> Now, any new expense added without a currency flag will be in EUR.
+>
+> ```bash
+> # This expense will be recorded as 15 EUR
+> expense add 15 "Lunch"
+> ```
+>
+> **2. Overriding the Default for a Single Expense**
+>
+> For one-off transactions in a different currency, simply use the `--currency` flag when adding an expense.
+>
+> ```bash
+> # Add a specific expense in US Dollars, even if your default is EUR
+> expense add 20 "Souvenir" --currency USD
+> ```
+>
+> In short: `expense change-currency` sets your **persistent preference**, and `expense add --currency` provides **transaction-specific flexibility**.
 
 ---
 

@@ -194,12 +194,16 @@ function ensureDataFile() {
 function getConfig() {
   if (fs.existsSync(configFile)) {
     try {
-      const config = JSON.parse(fs.readFileSync(configFile, "utf-8"));
+      const configData = fs.readFileSync(configFile, "utf-8");
+      // Handle case where file is empty
+      const config = configData ? JSON.parse(configData) : {};
+
       if (!config.currencyHistory) {
         config.currencyHistory = [];
       }
+      // Explicitly check for undefined to distinguish from a null value that might be set intentionally
       if (config.preferredCurrency === undefined) {
-        config.preferredCurrency = null;
+        config.preferredCurrency = null; // Set to null if it doesn't exist
       }
       return config;
     } catch (e) {
@@ -1063,6 +1067,79 @@ function clearRedoStack() {
 }
 // --- END NEW: Undo/Redo Stack Management Functions ---
 
+// *** NEW FEATURE: Function to handle initial currency setup on first run ***
+async function promptForInitialCurrency() {
+  const config = getConfig();
+
+  // This check is slightly redundant if called from main(), but good for standalone robustness
+  if (config.preferredCurrency !== null) {
+    return true;
+  }
+
+  stopLoadingMessage(); // Ensure no spinners are running
+
+  console.log(chalk.cyan("\n👋 Welcome to expenses-tracker-cli!"));
+  console.log(chalk.blue("To get started, let's set your default currency."));
+  console.log(
+    chalk.gray(
+      "This will be used for all future expenses unless you specify a different one."
+    )
+  );
+  console.log(
+    chalk.gray(
+      "You can change **this default currency** at any time with 'expense change-currency.\n"
+    )
+  );
+
+  // Prompt for the initial currency code
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  const initialInput = await new Promise((resolve) => {
+    rl.question(
+      chalk.yellow(
+        "Please enter your preferred 3-letter currency code (e.g., USD, EUR, BDT): "
+      ),
+      (answer) => {
+        rl.close();
+        resolve(answer.trim());
+      }
+    );
+  });
+
+  if (!initialInput) {
+    console.log(
+      chalk.yellow(
+        "\nSetup cancelled. You can set the currency later using the 'change-currency' command."
+      )
+    );
+    return false;
+  }
+
+  // Use the existing robust validation function
+  const chosenCurrency = await validateAndSuggestCurrency(initialInput);
+
+  if (chosenCurrency) {
+    config.preferredCurrency = chosenCurrency;
+    saveConfig(config);
+    console.log(
+      chalk.green(
+        `\n✅ Your preferred currency has been set to ${chosenCurrency}.`
+      )
+    );
+    return true;
+  } else {
+    // validateAndSuggestCurrency handles its own error messages for failure
+    console.log(
+      chalk.yellow(
+        "\nSetup cancelled. You can set the currency later using the 'change-currency' command."
+      )
+    );
+    return false;
+  }
+}
+
 // --- Commander.js Command Definitions ---
 
 program
@@ -1408,19 +1485,19 @@ program
             `\nℹ️  To edit expense #${expenseId}, please provide at least one option:`
           )
         );
-        console.log(`   - ${chalk.bold("--amount <number>")} (e.g., 75.50)`);
+        console.log(`    - ${chalk.bold("--amount <number>")} (e.g., 75.50)`);
         console.log(
-          `   - ${chalk.bold(
+          `    - ${chalk.bold(
             "--description <text...>"
           )} (e.g., "Updated item for lunch")`
         );
-        console.log(`   - ${chalk.bold("--currency <CODE>")} (e.g., GBP)`);
+        console.log(`    - ${chalk.bold("--currency <CODE>")} (e.g., GBP)`);
         console.log(
-          `   - ${chalk.bold("--date <YYYY-MM-DD>")} (e.g., 2025-07-30)`
+          `    - ${chalk.bold("--date <YYYY-MM-DD>")} (e.g., 2025-07-30)`
         );
         console.log(
           chalk.yellow(
-            `\n   Example: ${chalk.bold(
+            `\n    Example: ${chalk.bold(
               `expense edit ${expenseId} --amount 120 --description "Lunch with team"`
             )}`
           )
@@ -1511,7 +1588,7 @@ program
       confirmationMessage += `  Current: ${oldDetails.amount.toFixed(2)} ${
         oldDetails.currency
       } - "${oldDetails.description}" (${formatDate(oldDetails.date)})\n`;
-      confirmationMessage += `  New:    ${newDetails.amount.toFixed(2)} ${
+      confirmationMessage += `  New:     ${newDetails.amount.toFixed(2)} ${
         newDetails.currency
       } - "${newDetails.description}" (${formatDate(newDetails.date)})`;
 
@@ -2692,7 +2769,10 @@ program
     startLoadingMessage("Attempting to undo last operation");
     try {
       stopLoadingMessage(); // Stop spinner before confirmation
-      const undoneCommand = readStack(undoStackFile).slice(-1)[0]?.command; // Peek at the last command
+      const undoStack = readStack(undoStackFile);
+      const undoneCommand =
+        undoStack.length > 0 ? undoStack[undoStack.length - 1].command : null;
+
       const confirmQuestion = undoneCommand
         ? chalk.red(
             `⚠️  Are you sure you want to undo the last '${undoneCommand}' operation? This will revert your data to the previous state.`
@@ -2730,7 +2810,10 @@ program
     startLoadingMessage("Attempting to redo last operation");
     try {
       stopLoadingMessage(); // Stop spinner before confirmation
-      const redoneCommand = readStack(redoStackFile).slice(-1)[0]?.command; // Peek at the last command
+      const redoStack = readStack(redoStackFile);
+      const redoneCommand =
+        redoStack.length > 0 ? redoStack[redoStack.length - 1].command : null;
+
       const confirmQuestion = redoneCommand
         ? chalk.blue(
             `❓ Are you sure you want to redo the last '${redoneCommand}' operation? This will re-apply the previously undone changes.`
@@ -2763,61 +2846,104 @@ program
     }
   });
 
-// --- Commander.js Custom Unknown Command Handling ---
+// *** NEW FEATURE: Main execution logic to handle startup checks ***
+async function main() {
+  // Handle the case where no subcommand is provided (just 'expense')
+  if (process.argv.length === 2) {
+    console.log(
+      chalk.cyan(
+        "\nWelcome to expenses-tracker-cli! Your personal expense tracker."
+      )
+    );
+    console.log(
+      chalk.yellow("--------------------------------------------------")
+    );
+    console.log(chalk.yellow("To get started, try one of these commands:"));
+    console.log(
+      `  ${chalk.green(
+        "expense add <amount> <description>"
+      )} - Add a new expense`
+    );
+    console.log(`  ${chalk.green("expense list")} - View all your expenses`);
+    console.log(`  ${chalk.green("expense total")} - See your total spending`);
+    console.log(
+      `  ${chalk.green(
+        "expense change-currency --currency <3-letter currency code e.g., USD, EUR>"
+      )} - Set your preferred currency`
+    );
+    console.log(
+      chalk.yellow(
+        `\nYou can also filter expenses based on week, month, year, or specific date when typing list,total or export subcommand.`
+      )
+    );
+    console.log(
+      chalk.blue(
+        `\nFor a full list of commands and options, type: ${chalk.bold(
+          "expense --help"
+        )}`
+      )
+    );
+    console.log(
+      chalk.blue(
+        `For a comprehensive PDF manual, type: ${chalk.bold(
+          "expense manual [--open]"
+        )}`
+      )
+    );
+    console.log(
+      chalk.blue(
+        `To undo your last action, type: ${chalk.bold("expense undo")}`
+      )
+    );
+    console.log(
+      chalk.blue(
+        `To redo your last undone action, type: ${chalk.bold("expense redo")}`
+      )
+    );
+    process.exit(0);
+  }
 
-// Handle the case where no subcommand is provided (just 'expense')
-if (process.argv.length === 2) {
-  // Only 'node' and 'expense.js'
-  console.log(
-    chalk.cyan(
-      "\nWelcome to expenses-tracker-cli! Your personal expense tracker."
-    )
-  );
-  console.log(
-    chalk.yellow("--------------------------------------------------")
-  );
-  console.log(chalk.yellow("To get started, try one of these commands:"));
-  console.log(
-    `  ${chalk.green("expense add <amount> <description>")} - Add a new expense`
-  );
-  console.log(`  ${chalk.green("expense list")} - View all your expenses`);
-  console.log(`  ${chalk.green("expense total")} - See your total spending`);
-  console.log(
-    `  ${chalk.green(
-      "expense change-currency --currency <3-letter currency code e.g., USD, EUR>"
-    )} - Set your preferred currency`
-  );
-  console.log(
-    chalk.yellow(
-      `\nYou can also filter expenses based on week, month, year, or specific date when typing list,total or export subcommand.`
-    )
-  );
-  console.log(
-    chalk.blue(
-      `\nFor a full list of commands and options, type: ${chalk.bold(
-        "expense --help"
-      )}`
-    )
-  );
-  console.log(
-    chalk.blue(
-      `For a comprehensive PDF manual, type: ${chalk.bold(
-        "expense manual [--open]"
-      )}`
-    )
-  );
-  console.log(
-    chalk.blue(`To undo your last action, type: ${chalk.bold("expense undo")}`)
-  );
-  console.log(
-    chalk.blue(
-      `To redo your last undone action, type: ${chalk.bold("expense redo")}`
-    )
-  );
+  // First Run Currency Setup Logic
+  const config = getConfig();
+  const commandToRun = process.argv[2]; // The potential command
 
-  process.exit(0);
+  // List of commands that should NOT trigger the initial currency setup
+  const exemptCommands = new Set([
+    "change-currency",
+    "manual",
+    "undo",
+    "redo",
+    "reset",
+    "delete",
+    "d", // alias for delete
+    "recover",
+    "--help",
+    "-h",
+    "--version",
+    "-v",
+  ]);
+
+  // Trigger prompt if currency is not set AND it's not the welcome screen AND it's not an exempt command
+  if (config.preferredCurrency === null && !exemptCommands.has(commandToRun)) {
+    const setupSuccess = await promptForInitialCurrency();
+    if (!setupSuccess) {
+      process.exit(0); // Exit gracefully if user cancels setup
+    }
+    // Add a separator for cleaner UI after the initial setup
+    console.log(
+      chalk.gray("--------------------------------------------------")
+    );
+  }
+
+  // Parse arguments. This should be the very last step for Commander to process arguments.
+  // Any command not caught by the top-level interception (i.e., a valid command or --help/-v)
+  // will be handled by Commander's built-in parsing.
+  program.parse(process.argv);
 }
-// Parse arguments. This should be the very last line for Commander to process arguments.
-// Any command not caught by the top-level interception (i.e., a valid command or --help/-v)
-// will be handled by Commander's built-in parsing.
-program.parse(process.argv);
+
+// Call the main async function and catch any top-level errors
+main().catch((err) => {
+  stopLoadingMessage(); // Ensure spinner is stopped on error
+  console.error(chalk.red("\nAn unexpected error occurred:"), err);
+  process.exit(1);
+});
