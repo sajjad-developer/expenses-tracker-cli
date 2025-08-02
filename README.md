@@ -196,18 +196,283 @@ A few tips to ensure you get the most out of the tool:
 
 ## 📝 Commands
 
-- `expense add <amount> <description>` – Add a new expense
-- `expense list` – Show expenses with filtering options
-- `expense total` – Show totals by currency
-- `expense change-currency` – Set base currency and convert data
-- `expense edit` – Edit an existing record
-- `expense delete` – Soft-delete an entry
-- `expense recover` – Recover a deleted entry
-- `expense export --csv / --pdf` – Export data
-- `expense undo` / `redo` – Undo/redo last action
-- `expense manual` – Generate user manual PDF
+Here is a detailed guide to all available commands. Click on any command to see its options and examples.
 
-- `expense reset` – Clears all stored expenses (with confirmation prompt)
+---
+
+<details>
+<summary><code>expense add</code> (or <code>a</code>) – Add a new expense</summary>
+
+### `expense add`
+
+Adds a new expense record to your data file.
+
+**Usage:**
+
+```bash
+expense add [options] <amount> <description...>
+```
+
+**Arguments:**
+
+| Argument           | Description                                                           |
+| ------------------ | --------------------------------------------------------------------- |
+| `<amount>`         | The numeric cost of the expense.                                      |
+| `<description...>` | A description of the expense. Use quotes for multi-word descriptions. |
+
+**Options:**
+
+| Flag                    | Description                          | Default                 |
+| ----------------------- | ------------------------------------ | ----------------------- |
+| `-c, --currency <code>` | Specify a currency (e.g., USD, BDT). | Your preferred currency |
+
+**Example:**
+
+```bash
+expense add 45.50 "Lunch with the team" --currency BDT
+```
+
+</details>
+
+<details>
+<summary><code>expense list</code> (or <code>l</code>) – List and filter expenses</summary>
+
+### `expense list`
+
+Lists all recorded expenses with powerful filtering options.
+
+**Usage:**
+
+```bash
+expense list [options]
+```
+
+**Options:**
+
+| Flag        | Description                                     | Example                           |
+| ----------- | ----------------------------------------------- | --------------------------------- |
+| `--reindex` | Re-numbers displayed IDs starting from 1.       | `expense list --reindex`          |
+| `--date`    | Filter by specific date (YYYY-MM-DD).           | `expense list --date 2025-08-15`  |
+| `--day`     | Filter by day of the week (e.g., Monday).       | `expense list --day Sunday`       |
+| `--month`   | Filter by month number.                         | `expense list --month 8`          |
+| `--week`    | Filter by week of the month (requires --month). | `expense list --month 8 --week 2` |
+| `--year`    | Filter by year.                                 | `expense list --year 2025`        |
+| `--all`     | Include deleted expenses.                       | `expense list --all`              |
+
+**Example:**
+
+```bash
+expense list --month 8 --year 2025
+```
+
+</details>
+
+<details>
+<summary><code>expense total</code> (or <code>t</code>) – Calculate and show totals</summary>
+
+### `expense total`
+
+Calculates total expenses, grouped by currency, with filtering options.
+
+**Usage:**
+
+```bash
+expense total [options]
+```
+
+**Options:**
+
+Same time-based filters as `expense list`.
+
+| Flag      | Description                |
+| --------- | -------------------------- |
+| `--date`  | Filter by specific date.   |
+| `--day`   | Filter by day of the week. |
+| `--month` | Filter by month number.    |
+| `--week`  | Filter by week of month.   |
+| `--year`  | Filter by year.            |
+| `--all`   | Include deleted expenses.  |
+
+**Example:**
+
+```bash
+expense total --year 2025
+```
+
+</details>
+
+<details>
+<summary><code>expense edit</code> – Modify an existing expense</summary>
+
+### `expense edit`
+
+Modify details of an expense using its permanent ID.
+
+**Usage:**
+
+```bash
+expense edit [options] <id>
+```
+
+**Arguments:**
+
+| Argument | Description                  |
+| -------- | ---------------------------- |
+| `<id>`   | ID of the expense to modify. |
+
+**Options:**
+
+| Flag                       | Description                         |
+| -------------------------- | ----------------------------------- |
+| `-a, --amount <amount>`    | Change the expense amount.          |
+| `-d, --description <text>` | Change the description. Use quotes. |
+| `-c, --currency <code>`    | Change the currency.                |
+| `--date <YYYY-MM-DD>`      | Change the date.                    |
+
+**Example:**
+
+```bash
+expense edit 12 --amount 75.50 --description "Corrected price for lunch"
+```
+
+</details>
+
+<details>
+<summary><code>expense export</code> (or <code>x</code>) – Export data to PDF or CSV</summary>
+
+### `expense export`
+
+Export your expense data to a file.
+
+**Usage:**
+
+```bash
+expense export [options]
+```
+
+**Options:**
+
+| Flag      | Description                                     |
+| --------- | ----------------------------------------------- |
+| `--csv`   | Export to CSV.                                  |
+| `--pdf`   | Export to PDF.                                  |
+| `--open`  | Automatically open exported file.               |
+| (filters) | All time filters from `list` command available. |
+| `--all`   | Include deleted expenses.                       |
+
+**Example:**
+
+```bash
+expense export --pdf --month 8 --year 2025 --open
+```
+
+</details>
+
+<details>
+<summary><code>expense change-currency</code> – Set preferred currency</summary>
+
+### `expense change-currency`
+
+Sets your default currency and offers to convert past expenses.
+
+**Usage:**
+
+```bash
+expense change-currency --currency <code>
+```
+
+**Options:**
+
+| Flag                    | Description                      |
+| ----------------------- | -------------------------------- |
+| `-c, --currency <code>` | Required. New 3-letter currency. |
+
+**Example:**
+
+```bash
+expense change-currency --currency BDT
+```
+
+</details>
+
+<details>
+<summary><code>expense delete</code>, <code>recover</code>, <code>reset</code> – Data Management</summary>
+
+### Data Management Commands
+
+#### `expense delete <id>`
+
+Soft-delete an expense (hidden unless `--all` used).
+
+```bash
+expense delete 15
+```
+
+#### `expense recover <id>`
+
+Restore a previously deleted expense.
+
+```bash
+expense recover 15
+```
+
+#### `expense reset`
+
+Wipes all data (requires confirmation). Can be undone using `undo`.
+
+```bash
+expense reset
+```
+
+</details>
+
+<details>
+<summary><code>expense undo</code> & <code>redo</code> – Revert or re-apply actions</summary>
+
+### `expense undo`
+
+Reverts the last action:
+
+```bash
+expense undo
+```
+
+### `expense redo`
+
+Re-applies the last undone action:
+
+```bash
+expense redo
+```
+
+</details>
+
+<details>
+<summary><code>expense manual</code> – Generate a PDF User Manual</summary>
+
+### `expense manual`
+
+Generates a full PDF guide of all commands.
+
+**Usage:**
+
+```bash
+expense manual [options]
+```
+
+**Options:**
+
+| Flag     | Description                        |
+| -------- | ---------------------------------- |
+| `--open` | Automatically open the PDF manual. |
+
+**Example:**
+
+```bash
+expense manual --open
+```
+
+</details>
 
 ---
 
