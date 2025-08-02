@@ -164,33 +164,61 @@ To redo your last undone action, type: expense redo
 
 A few tips to ensure you get the most out of the tool:
 
-- **Use Double Dashes (`--`) for Options:**
-  Always use a double dash (`--`) for full option names (e.g., `--currency`, `--month`). A single dash (`-`) is only for single-letter aliases (e.g., `-c` for `--currency`).
+---
+
+### ✅ Use Options for Filtering
+
+The `list`, `total`, and `export` commands **require** option flags (like `--date` or `--month`) for filtering. Do **not** pass dates or months directly as arguments.
+
+```bash
+# ✅ Correct:
+expense list --month 8
+expense total --date 2025-08-15
+
+# ❌ Incorrect: This will trigger an error
+expense list 2025-08-15
+```
+
+---
+
+### ✅ Use Double Dashes (--) for Full Option Names
+
+Always use a double dash (`--`) for full option names like `--currency`, `--month`. Use a single dash (`-`) only for one-letter aliases like `-c`.
+
+```bash
+# ✅ Correct:
+expense list --month 8
+expense add 50 "Tea" -c BDT
+
+# ❌ Incorrect: This will be misinterpreted
+expense list -month 8
+```
+
+---
+
+### ✅ Quote Your Descriptions
+
+Descriptions with spaces must be wrapped in double quotes.
+
+```bash
+# ✅ Correct:
+expense add 150 "Weekly grocery shopping"
+
+# ❌ Incorrect: Only "Weekly" will be saved
+expense add 150 Weekly grocery shopping
+```
+
+---
+
+### ✅ Date and Currency Formats
+
+- **Dates**: Use the `YYYY-MM-DD` format when filtering by date.
 
   ```bash
-  # ✅ Correct:
-  expense list --month 8
-  expense add 50 "Tea" -c BDT
-
-  # ❌ Incorrect: The parser will misinterpret this
-  expense list -month 8
+  expense total --date 2025-08-15
   ```
 
-- **Quote Your Descriptions:**
-  When adding an expense with a description that contains spaces, you **must** enclose it in double quotes (`"`).
-
-  ```bash
-  # ✅ Correct:
-  expense add 150 "Weekly grocery shopping"
-
-  # ❌ Incorrect: This will only save "Weekly" as the description
-  expense add 150 Weekly grocery shopping
-  ```
-
-- **Date and Currency Formats:**
-  For the best results, always use standard formats:
-  - **Dates:** When using the `--date` filter, use the `YYYY-MM-DD` format (e.g., `2025-08-15`).
-  - **Currencies:** Use standard 3-letter [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) codes (e.g., `USD`, `EUR`, `BDT`). The tool will help you find the correct one if you're unsure.
+- **Currencies**: Use standard 3-letter [ISO 4217](https://www.thomsonreuters.com/en-us/help/legal-tracker/law-firm/international-currencies/list-of-currency-codes) currency codes like `USD`, `EUR`, `BDT`. The tool will guide you if you're unsure.
 
 ---
 

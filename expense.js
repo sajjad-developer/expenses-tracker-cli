@@ -1268,18 +1268,25 @@ program
     true
   ) // `true` makes it required
   .action(async (options) => {
-    startLoadingMessage("Changing currency"); // Start spinner for initial validation
+    // --- START: THE FIX ---
+    // This check now correctly handles the case where the --currency flag is missing entirely.
+    if (typeof options.currency !== "string") {
+      console.error(
+        chalk.red("❌ Error: The --currency flag is required for this command.")
+      );
+      console.log(
+        chalk.blue("\nExample: expense change-currency --currency USD")
+      );
+      return; // Exit the function gracefully
+    }
+    // --- END: THE FIX ---
+
+    startLoadingMessage("Changing currency");
     try {
-      pushToUndoStack("change-currency"); // Save current state before modification
-      clearRedoStack(); // Clear redo stack on new command
+      pushToUndoStack("change-currency");
+      clearRedoStack();
 
-      let newCurrencyInput = options.currency;
-      if (!newCurrencyInput) {
-        console.error(chalk.red("❌ Please provide a valid currency code."));
-        return;
-      }
-
-      const newCurrency = await validateAndSuggestCurrency(newCurrencyInput);
+      const newCurrency = await validateAndSuggestCurrency(options.currency);
 
       if (!newCurrency) {
         return; // Exit if currency validation failed and no valid currency was chosen
@@ -1781,7 +1788,7 @@ program
   });
 
 program
-  .command("list")
+  .command("list [filter]") // MODIFIED: Added optional [filter] argument to catch invalid inputs
   .alias("l")
   .description("List all expenses")
   .option("--reindex", "Temporarily show sequential IDs (reindex expenses)")
@@ -1791,32 +1798,44 @@ program
   .option("--week <1-5>", "Filter by week number of the month (1-5)")
   .option("--year <YYYY>", "Filter by year")
   .option("--all", "Include deleted expenses in the list")
-  .action((options) => {
-    // --- START FOOLPROOF VALIDATION & PRE-PROCESSING ---
+  .action((filter, options) => {
+    // MODIFIED: Action now receives "filter" and "options"
+    // --- ADDED: Block to catch and reject direct arguments ---
+    if (filter) {
+      console.error(chalk.red("\n❌ Error: Invalid command format."));
+      console.error(
+        chalk.yellow(
+          "Please provide filters using options like --date, --month, or --year."
+        )
+      );
+      console.log(chalk.blue("\nFor example:"));
+      console.log(chalk.green("  expense list --date 2025-08-01"));
+      console.log(chalk.green("  expense list --month 8 --year 2025"));
+      process.exit(1);
+    }
+    // --- END of new block ---
+
+    // The original logic of the command continues below
     validateFilterOptions(options);
-    // --- END FOOLPROOF VALIDATION ---
 
     startLoadingMessage("Loading expenses");
     try {
       let expenses = readExpenses();
-
-      // Call filterExpenses. It no longer needs to validate, just filter.
       expenses = filterExpenses(expenses, options, options.all);
 
       if (expenses.length === 0) {
         console.log(
           chalk.yellow("📭 No expenses found for the selected filters.")
         );
-        return; // Exit here if no expenses, stopLoadingMessage in finally block
+        return;
       }
 
-      // --- LABEL GENERATION (Unified with generateExportLabels) ---
-      const { titleLabel: label } = generateExportLabels(options); // Call the unified function
+      const { titleLabel: label } = generateExportLabels(options);
 
-      let displayLabel = label; // Use a new variable for display to add "(Including Deleted)"
+      let displayLabel = label;
       if (options.all) {
         displayLabel += " (Including Deleted)";
-      } // --- END LABEL GENERATION ---
+      }
 
       console.log(
         chalk.cyan(
@@ -1868,12 +1887,12 @@ program
         );
       });
     } finally {
-      stopLoadingMessage(); // Ensure spinner stops regardless of outcome
+      stopLoadingMessage();
     }
   });
 
 program
-  .command("total")
+  .command("total [filter]") // MODIFIED: Added optional [filter] argument to catch invalid inputs
   .alias("t")
   .description("Show total amount spent per currency")
   .option("--date <YYYY-MM-DD>", "Filter by specific date")
@@ -1882,16 +1901,29 @@ program
   .option("--week <1-5>", "Filter by week number of the month (1-5)")
   .option("--year <YYYY>", "Filter by year")
   .option("--all", "Include deleted expenses in the total calculation")
-  .action(async (options) => {
-    // --- START FOOLPROOF VALIDATION & PRE-PROCESSING ---
+  .action(async (filter, options) => {
+    // MODIFIED: Action now receives "filter" and "options"
+    // --- ADDED: Block to catch and reject direct arguments ---
+    if (filter) {
+      console.error(chalk.red("\n❌ Error: Invalid command format."));
+      console.error(
+        chalk.yellow(
+          "Please provide filters using options like --date, --month, or --year."
+        )
+      );
+      console.log(chalk.blue("\nFor example:"));
+      console.log(chalk.green("  expense total --date 2025-08-01"));
+      console.log(chalk.green("  expense total --month 8 --year 2025"));
+      process.exit(1);
+    }
+    // --- END of new block ---
+
+    // The original logic of the command continues below
     validateFilterOptions(options);
-    // --- END FOOLPROOF VALIDATION ---
 
     startLoadingMessage("Calculating total expenses");
     try {
-      // Get all expenses first
       const allExpenses = readExpenses();
-      // Then filter them based on provided options
       let filteredExpenses = filterExpenses(allExpenses, options, options.all);
 
       if (!filteredExpenses.length) {
@@ -1899,38 +1931,32 @@ program
         return;
       }
 
-      // --- LABEL GENERATION (Unified with generateExportLabels) ---
-      const { titleLabel: label } = generateExportLabels(options); // Call the unified function
-
-      let displayLabel = label; // Use a new variable for display to add "(Including Deleted)"
+      const { titleLabel: label } = generateExportLabels(options);
+      let displayLabel = label;
       if (options.all) {
         displayLabel += " (Including Deleted)";
-      } // --- END LABEL GENERATION ---
-      console.log(chalk.blueBright(`\n💸 Total Spent for ${displayLabel}:`)); // Use displayLabel here
+      }
+      console.log(chalk.blueBright(`\n💸 Total Spent for ${displayLabel}:`));
 
       const config = getConfig();
-      const preferredCurrency = config.preferredCurrency || "USD"; // Get preferred currency from config
+      const preferredCurrency = config.preferredCurrency || "USD";
 
       const totals = {};
       const unconvertedCurrenciesInFilteredSet = new Set();
-
       for (const e of filteredExpenses) {
-        // Iterate over filtered expenses
         const currentCurrency = e.currency ?? e.originalCurrency ?? "USD";
         if (!totals[currentCurrency]) totals[currentCurrency] = 0;
         totals[currentCurrency] += e.amount;
-
         if (currentCurrency !== preferredCurrency) {
           unconvertedCurrenciesInFilteredSet.add(currentCurrency);
         }
       }
 
-      // NEW LOGIC: Sort currencies alphabetically, keeping preferred currency first
       const currencies = Object.keys(totals);
       currencies.sort((a, b) => {
-        if (a === preferredCurrency) return -1; // Preferred currency goes to the beginning
-        if (b === preferredCurrency) return 1; // Preferred currency goes to the beginning
-        return a.localeCompare(b); // Other currencies sorted alphabetically
+        if (a === preferredCurrency) return -1;
+        if (b === preferredCurrency) return 1;
+        return a.localeCompare(b);
       });
 
       if (currencies.length > 0) {
@@ -1947,15 +1973,13 @@ program
       } else {
         console.log(chalk.red(`No expenses found with any currency.`));
       }
-      console.log(); // Adds a newline at the end of the total output for cleaner display
+      console.log();
 
-      // --- START NEW FOOLPROOF CONVERSION PROMPT FOR EACH UNCONVERTED CURRENCY ---
-      // Only prompt if there are unconverted currencies AND a preferred currency is set
       if (
         unconvertedCurrenciesInFilteredSet.size > 0 &&
         preferredCurrency !== null
       ) {
-        stopLoadingMessage(); // Stop spinner before prompt
+        stopLoadingMessage();
 
         const confirmedConversion = await promptConfirmation(
           chalk.blue(
@@ -1964,10 +1988,10 @@ program
         );
 
         if (confirmedConversion) {
-          pushToUndoStack("currency-conversion"); // Capture state before starting conversions
-          clearRedoStack(); // Clear redo stack as conversion is a new operation
+          pushToUndoStack("currency-conversion");
+          clearRedoStack();
 
-          let expensesToWrite = readExpenses(); // Load ALL expenses for modification
+          let expensesToWrite = readExpenses();
           let totalConvertedCount = 0;
 
           const sortedUnconvertedCurrencies = Array.from(
@@ -1975,7 +1999,6 @@ program
           ).sort();
 
           for (const currencyToConvert of sortedUnconvertedCurrencies) {
-            // This check is already done by unconvertedCurrenciesInFilteredSet, but good for robustness
             if (currencyToConvert === preferredCurrency) continue;
 
             console.log(
@@ -2088,10 +2111,7 @@ program
 
             if (isValidRate) {
               let currentCurrencyConvertedCount = 0;
-              // Loop through ALL expenses to find and convert relevant ones
               for (const expense of expensesToWrite) {
-                // IMPORTANT: Re-check if this specific expense is part of the original filtered set
-                // and has the current currency being converted.
                 const isExpenseInFilteredSet = filteredExpenses.some(
                   (fe) => fe.id === expense.id
                 );
@@ -2125,18 +2145,16 @@ program
           }
 
           if (totalConvertedCount > 0) {
-            writeExpenses(expensesToWrite); // Write the modified expenses back to file
+            writeExpenses(expensesToWrite);
             console.log(
               chalk.green(
                 `\n✨ All eligible expenses have been converted to ${preferredCurrency}.`
               )
             );
-            // Re-calculate and display updated totals based on the MODIFIED and FILTERED data
             console.log(
               chalk.blueBright(`\n💸 Updated Total Spent for ${displayLabel}:`)
             );
 
-            // Re-filter the *updated* expenses to get the correct set for display
             const updatedFilteredExpenses = filterExpenses(
               expensesToWrite,
               options,
@@ -2165,8 +2183,6 @@ program
                   `  ${chalk.green(currency)}: ${amount} (Preferred)`
                 );
               } else {
-                // This case should ideally not be hit if all were converted,
-                // but good for robustness if some conversion failed or no rate was given.
                 console.log(
                   `  ${currency}: ${amount} (Not converted to Preferred Currency ${preferredCurrency})`
                 );
@@ -2182,21 +2198,19 @@ program
           );
         }
       } else if (preferredCurrency === null) {
-        // This handles the case where no preferred currency is set
         console.log(
           chalk.yellow(
             "ℹ️  No preferred currency set. Run `expense change-currency --currency <CODE>` to set one."
           )
         );
       }
-      // --- END NEW FOOLPROOF CONVERSION PROMPT FOR EACH UNCONVERTED CURRENCY ---
     } finally {
-      stopLoadingMessage(); // Ensure spinner stops regardless of outcome
+      stopLoadingMessage();
     }
   });
 
 program
-  .command("export")
+  .command("export [filter]") // MODIFIED: Added optional [filter] argument to catch invalid inputs
   .alias("x")
   .description("Export expenses to CSV or PDF")
   .option("--csv", "Export to CSV file")
@@ -2208,10 +2222,25 @@ program
   .option("--year <YYYY>", "Filter by year")
   .option("--open", "Open the exported file automatically")
   .option("--all", "Include deleted expenses in the export")
-  .action(async (options) => {
-    // --- START FOOLPROOF VALIDATION & PRE-PROCESSING ---
+  .action(async (filter, options) => {
+    // MODIFIED: Action now receives "filter" and "options"
+    // --- ADDED: Block to catch and reject direct arguments ---
+    if (filter) {
+      console.error(chalk.red("\n❌ Error: Invalid command format."));
+      console.error(
+        chalk.yellow(
+          "Please provide filters using options like --date, --month, or --year."
+        )
+      );
+      console.log(chalk.blue("\nFor example:"));
+      console.log(chalk.green("  expense export --pdf --date 2025-08-01"));
+      console.log(chalk.green("  expense export --csv --month 8"));
+      process.exit(1);
+    }
+    // --- END of new block ---
+
+    // The original logic of the command continues below
     validateFilterOptions(options);
-    // --- END FOOLPROOF VALIDATION ---
 
     startLoadingMessage("Exporting expenses");
     try {
@@ -2219,7 +2248,7 @@ program
         console.log(
           chalk.yellow("ℹ️  Please specify an export format: --pdf or --csv.")
         );
-        return; // Exit here if no format specified, stopLoadingMessage in finally block
+        return;
       }
 
       let expenses = readExpenses();
@@ -2227,11 +2256,11 @@ program
 
       if (!expenses.length) {
         console.log(chalk.yellow("ℹ️  No expenses to export."));
-        return; // Exit here if no expenses, stopLoadingMessage in finally block
+        return;
       }
 
       const downloadsDir = getDownloadsFolder();
-      const { filenameLabel, titleLabel } = generateExportLabels(options); // This uses original options directly
+      const { filenameLabel, titleLabel } = generateExportLabels(options);
 
       const config = getConfig();
       const preferredCurrency = config.preferredCurrency || "USD";
@@ -2493,7 +2522,7 @@ program
         }
       }
     } finally {
-      stopLoadingMessage(); // Ensure spinner stops regardless of outcome
+      stopLoadingMessage();
     }
   });
 
