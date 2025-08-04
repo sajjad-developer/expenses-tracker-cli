@@ -1,0 +1,71 @@
+{
+  "name": "expenses-tracker-cli",
+  "version": "1.0.0",
+  "main": "expense.js",
+  "type": "module",
+  "scripts": {
+    "start": "node expense.js",
+    "format": "prettier --write .",
+    "lint": "prettier --check . && eslint .",
+    "test": "node expense.js --version"
+  },
+  "bin": {
+    "expense": "expense.js"
+  },
+  "keywords": [
+    "expense",
+    "cli",
+    "finance",
+    "tracker",
+    "budget",
+    "csv",
+    "pdf",
+    "personal finance",
+    "expense tracker",
+    "terminal",
+    "command-line",
+    "money",
+    "currency",
+    "accounting",
+    "utility"
+  ],
+  "author": {
+    "name": "Md Sajjad Hossen",
+    "url": "https://eco-starfish-coder.com"
+  },
+  "license": "MIT",
+  "description": "💸 Take control of your finances from the command line with a powerful expense tracker featuring safe undo/redo, smart currency handling, typo correction, and beautiful PDF/CSV exports. 📈",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "pdf-lib": "^1.17.1"
+  },
+  "files": [
+    "expense.js",
+    "package.json",
+    "all-currencies.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sajjad-developer/expenses-tracker-cli.git"
+  },
+  "homepage": "https://github.com/sajjad-developer/expenses-tracker-cli#readme",
+  "funding": {
+    "url": "https://eco-starfish-coder.com/tip"
+  },
+  "bugs": {
+    "url": "https://github.com/sajjad-developer/expenses-tracker-cli/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.32.0",
+    "eslint": "^9.32.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^16.3.0",
+    "prettier": "^3.6.2"
+  }
+}
