@@ -37,7 +37,7 @@
   "description": "💸 Take control of your finances from the command line with a powerful expense tracker featuring safe undo/redo, smart currency handling, typo correction, and beautiful PDF/CSV exports. 📈",
   "dependencies": {
     "chalk": "^5.3.0",
-    "commander": "^12.1.0",
+    "commander": "^14.0.0",
     "pdf-lib": "^1.17.1"
   },
   "files": [
